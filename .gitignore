@@ -52,3 +52,7 @@ data/wordpress/wp-content/plugins/bogo/
 # Documentation
 !*.md
 !PROYECTO-ESTADO.md
+
+# Complete directories to ignore
+/data/
+/wp-content/
