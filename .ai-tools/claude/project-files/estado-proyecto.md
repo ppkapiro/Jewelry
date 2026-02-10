@@ -1,3 +1,9 @@
+# Estado del Proyecto Jewelry
+
+Progreso actual y tareas pendientes.
+
+---
+
 # Estado del Proyecto Jewelry Website
 
 **Fecha:** 2026-02-10 17:07

@@ -29,6 +29,11 @@ Thumbs.db
 
 # IDE
 .idea/
+.vscode/*.backup*
+*.sublime-project
+*.sublime-workspace
+**/*.tmp
+
 # Allow VSCode configuration files for project setup
 !.vscode/
 !.vscode/settings.json
@@ -36,11 +41,24 @@ Thumbs.db
 !.vscode/tasks.json
 !.vscode/jewelry.code-snippets
 
+# Node/npm (if used in future)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
 # Backup files
 *.bak
+*.bak*
+*.backup*
+**/*backup*
 *.swp
 *.swo
 *~
+data/wordpress/wp-config-*.php
+!data/wordpress/wp-config-sample.php
 
 # Keep structure
 !data/wordpress/wp-content/

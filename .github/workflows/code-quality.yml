@@ -1,0 +1,219 @@
+name: Code Quality & Security
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for sensitive files in commits
+        run: |
+          echo "🔍 Checking for sensitive files..."
+
+          # Check if sensitive files exist in tracked files
+          SENSITIVE_FILES=$(git ls-files | grep -E '(^\.env$|credentials|\.bak$|\.backup$)' || true)
+
+          if [ -n "$SENSITIVE_FILES" ]; then
+            echo "❌ ERROR: Sensitive files found:"
+            echo "$SENSITIVE_FILES"
+            exit 1
+          else
+            echo "✅ No sensitive files found in tracked files"
+          fi
+
+      - name: Verify .gitignore is complete
+        run: |
+          echo "🔍 Verifying .gitignore..."
+
+          # Check critical patterns are in .gitignore
+          grep -q 'data/mysql/' .gitignore || { echo "❌ Missing: data/mysql/"; exit 1; }
+          grep -q '\.env' .gitignore || { echo "❌ Missing: .env"; exit 1; }
+          grep -q '\.wp-credentials' .gitignore || { echo "❌ Missing: .wp-credentials"; exit 1; }
+
+          echo "✅ .gitignore is properly configured"
+
+      - name: Check for hardcoded credentials in code
+        run: |
+          echo "🔍 Scanning for hardcoded credentials..."
+
+          # Search for potential hardcoded passwords/keys
+          FOUND=$(grep -r -i -E '(password|passwd|pwd|secret|api_key|apikey|token)[\s]*=[\s]*["\047][^"\047]{8,}["\047]' \
+            --include="*.php" \
+            --include="*.js" \
+            --exclude-dir=node_modules \
+            --exclude-dir=vendor \
+            --exclude-dir=data \
+            . || true)
+
+          if [ -n "$FOUND" ]; then
+            echo "⚠️  WARNING: Potential hardcoded credentials found:"
+            echo "$FOUND"
+            echo ""
+            echo "Please review these findings. If false positives, add to exclusion list."
+          else
+            echo "✅ No hardcoded credentials detected"
+          fi
+
+  php-lint:
+    name: PHP Syntax Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+          coverage: none
+
+      - name: PHP Syntax Check - Kadence Theme
+        run: |
+          echo "🔍 Checking PHP syntax in Kadence theme..."
+
+          if [ -f "data/wordpress/wp-content/themes/kadence/functions-custom.php" ]; then
+            php -l data/wordpress/wp-content/themes/kadence/functions-custom.php
+            echo "✅ functions-custom.php syntax OK"
+          else
+            echo "⚠️  functions-custom.php not found (might be new repo)"
+          fi
+
+      - name: PHP Syntax Check - Custom Plugins
+        run: |
+          echo "🔍 Checking PHP syntax in custom plugins..."
+
+          if [ -d "data/wordpress/wp-content/plugins/jewelry-custom" ]; then
+            find data/wordpress/wp-content/plugins/jewelry-custom -name "*.php" -exec php -l {} \;
+            echo "✅ All custom plugin files syntax OK"
+          else
+            echo "⚠️  No custom plugins found yet"
+          fi
+
+      - name: PHP Syntax Check - Scripts
+        run: |
+          echo "🔍 Checking PHP syntax in scripts..."
+
+          find scripts -name "*.php" -exec php -l {} \; 2>/dev/null || echo "No PHP files in scripts/"
+
+          echo "✅ Scripts syntax check complete"
+
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Lint Markdown files
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: |
+            **/*.md
+            !data/**
+            !node_modules/**
+
+  repo-structure:
+    name: Repository Structure Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify required files exist
+        run: |
+          echo "🔍 Checking required files..."
+
+          # Required files
+          REQUIRED_FILES=(
+            "README.md"
+            "PROYECTO-ESTADO.md"
+            ".gitignore"
+            ".editorconfig"
+            "docker-compose.yml"
+            ".env.example"
+          )
+
+          MISSING=()
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              MISSING+=("$file")
+            fi
+          done
+
+          if [ ${#MISSING[@]} -ne 0 ]; then
+            echo "❌ Missing required files:"
+            printf '%s\n' "${MISSING[@]}"
+            exit 1
+          else
+            echo "✅ All required files present"
+          fi
+
+      - name: Verify directory structure
+        run: |
+          echo "🔍 Checking directory structure..."
+
+          # Required directories
+          REQUIRED_DIRS=(
+            ".github"
+            ".github/agents"
+            ".ai-tools"
+            "scripts"
+            "docs"
+          )
+
+          MISSING=()
+          for dir in "${REQUIRED_DIRS[@]}"; do
+            if [ ! -d "$dir" ]; then
+              MISSING+=("$dir")
+            fi
+          done
+
+          if [ ${#MISSING[@]} -ne 0 ]; then
+            echo "❌ Missing required directories:"
+            printf '%s\n' "${MISSING[@]}"
+            exit 1
+          else
+            echo "✅ All required directories present"
+          fi
+
+  summary:
+    name: Summary
+    runs-on: ubuntu-latest
+    needs: [security-audit, php-lint, markdown-lint, repo-structure]
+    if: always()
+
+    steps:
+      - name: Check results
+        run: |
+          echo "📊 CI/CD Summary"
+          echo "================"
+          echo ""
+          echo "Security Audit: ${{ needs.security-audit.result }}"
+          echo "PHP Lint: ${{ needs.php-lint.result }}"
+          echo "Markdown Lint: ${{ needs.markdown-lint.result }}"
+          echo "Repo Structure: ${{ needs.repo-structure.result }}"
+          echo ""
+
+          if [[ "${{ needs.security-audit.result }}" == "failure" ]] || \
+             [[ "${{ needs.php-lint.result }}" == "failure" ]] || \
+             [[ "${{ needs.markdown-lint.result }}" == "failure" ]] || \
+             [[ "${{ needs.repo-structure.result }}" == "failure" ]]; then
+            echo "❌ Some checks failed. Please review the logs above."
+            exit 1
+          else
+            echo "✅ All checks passed!"
+          fi
