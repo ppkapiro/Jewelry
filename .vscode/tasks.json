@@ -238,6 +238,26 @@
     // Development Tasks
     // ============================================
     {
+      "label": "Git: Sync Fork (main/develop)",
+      "type": "shell",
+      "command": "bash ./scripts/sync-fork.sh ${input:forkName} ${input:forkUrl} ${input:syncStrategy}",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Git: Sync Fork (ppkapiro default)",
+      "type": "shell",
+      "command": "bash ./scripts/sync-fork.sh ppkapiro https://github.com/ppkapiro/Jewelry.git rebase",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
       "label": "Dev: Full Restart",
       "type": "shell",
       "command": "docker compose down && docker compose up -d && docker exec jewelry_wordpress wp rewrite flush --allow-root && docker exec jewelry_wordpress wp cache flush --allow-root",
@@ -291,12 +311,27 @@
       "id": "browser",
       "type": "pickString",
       "description": "Select browser to open",
-      "options": [
-        "xdg-open",
-        "open",
-        "start"
-      ],
+      "options": ["xdg-open", "open", "start"],
       "default": "xdg-open"
+    },
+    {
+      "id": "forkName",
+      "type": "promptString",
+      "description": "Fork remote name (e.g., ppkapiro)",
+      "default": "ppkapiro"
+    },
+    {
+      "id": "forkUrl",
+      "type": "promptString",
+      "description": "Fork URL (e.g., https://github.com/ppkapiro/Jewelry.git)",
+      "default": "https://github.com/ppkapiro/Jewelry.git"
+    },
+    {
+      "id": "syncStrategy",
+      "type": "pickString",
+      "description": "Sync strategy",
+      "options": ["rebase", "merge"],
+      "default": "rebase"
     }
   ]
 }
