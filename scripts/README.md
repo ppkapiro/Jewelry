@@ -14,6 +14,10 @@ Utilidades para gestión y mantenimiento del proyecto Jewelry.
 - **[setup-dev.sh](./setup-dev.sh)** - Setup completo del entorno de desarrollo local
 - **[clear-cache.sh](./clear-cache.sh)** - Limpiar cache de WordPress
 
+### Git y Sincronización
+
+- **[sync-fork.sh](./sync-fork.sh)** - Sincronizar cambios desde un fork (main/develop)
+
 ### Testing
 
 - **[test-connections.sh](./test-connections.sh)** - Verificar conectividad de servicios Docker
@@ -59,4 +63,4 @@ Al crear nuevos scripts:
 
 ---
 
-**Última actualización:** 10 de febrero de 2026
+**Última actualización:** 11 de febrero de 2026
