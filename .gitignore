@@ -34,6 +34,19 @@ Thumbs.db
 *.sublime-workspace
 **/*.tmp
 
+# Python caches
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+.coverage
+htmlcov/
+
+# Misc cache
+.cache/
+
 # Allow VSCode configuration files for project setup
 !.vscode/
 !.vscode/settings.json
